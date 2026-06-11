@@ -1,12 +1,14 @@
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.awt.event.MouseListener;
+import java.awt.event.KeyListener;
 
-public class DisplayPanel extends JPanel implements MouseListener{
+public class DisplayPanel extends JPanel implements MouseListener, KeyListener {
     private int level;
     private int health;
     private int damage;
@@ -24,6 +26,9 @@ public class DisplayPanel extends JPanel implements MouseListener{
             System.out.println(e.getMessage());
         }
         addMouseListener(this);
+        addKeyListener(this);
+        setFocusable(true);
+        requestFocusInWindow();
     }
 
     private void addMouseListener() {
@@ -59,6 +64,21 @@ public class DisplayPanel extends JPanel implements MouseListener{
 
     @Override
     public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
 
     }
 }
