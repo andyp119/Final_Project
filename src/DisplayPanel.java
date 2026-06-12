@@ -11,7 +11,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private int health;
     private int damage;
 
-    private ArrayList<BufferedImage> weapons;
+    private ArrayList<BufferedImage> Rweapons;
+    private ArrayList<BufferedImage> Lweapons;
+
     private BufferedImage character;
     private int characterX;
     private int characterY;
@@ -27,20 +29,27 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         characterX = 800;
         characterY = 800;
         pressedKeys = new boolean[128];
-        weapons = new ArrayList<>();
+
+        Rweapons = new ArrayList<>();
+        Lweapons = new ArrayList<>();
         timer = new Timer(50, this);
         try {
-            background = ImageIO.read(new File("src/game.png"));
+            background = ImageIO.read(new File("images/game.png"));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         try {
-            character = ImageIO.read(new File("src/rightCharacter.png"));
+            character = ImageIO.read(new File("images/rightCharacter.png"));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         try {
-             weapons.add(ImageIO.read(new File("src/Rsword1.png")));
+             Rweapons.add(ImageIO.read(new File("images/Rsword1.png")));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            Lweapons.add(ImageIO.read(new File("images/Lsword1.png")));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -64,7 +73,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         g.drawString("Level: " + level, 50,30);
         g.setColor(Color.GREEN);
         g.drawLine(0, 900, 2000, 900);
-        g.drawImage(weapons.get(level), characterX+75, characterY-38, 75, 75,null);
+        g.drawImage(Rweapons.get(level), characterX+75, characterY-38, 75, 75,null);
+        g.drawRect(characterX, characterY, 25, 25);
     }
 
     @Override
@@ -103,18 +113,18 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         pressedKeys[keyCode] = true;
         if (keyCode == KeyEvent.VK_A) {
             try {
-                character = ImageIO.read(new File("src/leftCharacter.png"));
+                character = ImageIO.read(new File("images/leftCharacter.png"));
             } catch (IOException error) { }
             try {
-                weapons.add(ImageIO.read(new File("src/Lsword1.png")));
+                Lweapons.add(ImageIO.read(new File("images/Lsword1.png")));
             } catch (IOException error) { }
         }
         if (keyCode == KeyEvent.VK_D) {
             try {
-                character = ImageIO.read(new File("src/rightCharacter.png"));
+                character = ImageIO.read(new File("images/rightCharacter.png"));
             } catch (IOException error) { }
             try {
-                weapons.add(ImageIO.read(new File("src/Rsword1.png")));
+                Rweapons.add(ImageIO.read(new File("images/Rsword1.png")));
             } catch (IOException error) { }
         }
         repaint();
@@ -134,10 +144,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         if (pressedKeys[KeyEvent.VK_D]) {
             characterX += 5;
         }
+        if (pressedKeys[KeyEvent.VK_A] && pressedKeys[KeyEvent.VK_SHIFT]) {
+            characterX -= 5;
+
+        }
+        if (pressedKeys[KeyEvent.VK_D] && pressedKeys[KeyEvent.VK_SHIFT]) {
+            characterX += 5;
+        }
+        if (pressedKeys[KeyEvent.VK_SPACE]) {
+            characterY -= 25;
+        }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        while(characterY <= 800) {
+            characterY += 5;
+        }
         moveCharacter();
         repaint();
     }
