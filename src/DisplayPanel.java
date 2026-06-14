@@ -10,25 +10,46 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private int level;
     private int health;
     private int damage;
+    private int speed;
 
     private ArrayList<BufferedImage> Rweapons;
     private ArrayList<BufferedImage> Lweapons;
 
+    private ArrayList<Mob> mobs;
+
     private BufferedImage character;
     private int characterX;
     private int characterY;
+    private boolean facingRight;
+
     private BufferedImage background;
     private Timer timer;
     private boolean[] pressedKeys;
+    private int velocityY;
+    private boolean onGround;
+    private int ground;
+    private int cameraX;
+    private int gameW;
+    private int gameH;
+    private int spawnTimer;
 
 
     public DisplayPanel() {
         level = 0;
         health = 100;
         damage = 10;
-        characterX = 800;
-        characterY = 800;
+        characterX = 350;
+        characterY = 350;
+        facingRight = true;
         pressedKeys = new boolean[128];
+        velocityY = 0;
+        onGround = true;
+        ground = 350;
+        cameraX = 0;
+        gameW = 3000;
+        gameH = 605;
+        spawnTimer = 0;
+        mobs = new ArrayList<>();
 
         Rweapons = new ArrayList<>();
         Lweapons = new ArrayList<>();
@@ -53,6 +74,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+        try {
+            BufferedImage slimeImage = ImageIO.read(new File("images/slime.png"));
+            mobs.add(new Mob(700, ground + 30, 50,50,slimeImage));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
 
         addMouseListener(this);
         addKeyListener(this);
@@ -66,15 +93,19 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(background, 0, 0, null);
-        g.drawImage(character, characterX, characterY, 100,88,null);
+        g.drawImage(background, -cameraX, 0, gameW, gameH, null);
+        g.drawImage(character, characterX-cameraX, characterY, 100,88,null);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.setColor(Color.BLACK);
         g.drawString("Level: " + level, 50,30);
-        g.setColor(Color.GREEN);
-        g.drawLine(0, 900, 2000, 900);
-        g.drawImage(Rweapons.get(level), characterX+75, characterY-38, 75, 75,null);
-        g.drawRect(characterX, characterY, 25, 25);
+        for (Mob m : mobs) {
+            m.draw(g, cameraX);
+        }
+        if (facingRight) {
+            g.drawImage(Rweapons.get(level), characterX-cameraX+75, characterY-38, 75, 75, null);
+        } else {
+            g.drawImage(Lweapons.get(level), characterX-cameraX-50, characterY-38, 75, 75, null);
+        }
     }
 
     @Override
@@ -112,19 +143,15 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         int keyCode = e.getKeyCode();
         pressedKeys[keyCode] = true;
         if (keyCode == KeyEvent.VK_A) {
+            facingRight = false;
             try {
                 character = ImageIO.read(new File("images/leftCharacter.png"));
             } catch (IOException error) { }
-            try {
-                Lweapons.add(ImageIO.read(new File("images/Lsword1.png")));
-            } catch (IOException error) { }
         }
         if (keyCode == KeyEvent.VK_D) {
+            facingRight = true;
             try {
                 character = ImageIO.read(new File("images/rightCharacter.png"));
-            } catch (IOException error) { }
-            try {
-                Rweapons.add(ImageIO.read(new File("images/Rsword1.png")));
             } catch (IOException error) { }
         }
         repaint();
@@ -145,23 +172,55 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             characterX += 5;
         }
         if (pressedKeys[KeyEvent.VK_A] && pressedKeys[KeyEvent.VK_SHIFT]) {
-            characterX -= 5;
+            characterX -= 10;
 
         }
         if (pressedKeys[KeyEvent.VK_D] && pressedKeys[KeyEvent.VK_SHIFT]) {
-            characterX += 5;
+            characterX += 10;
         }
-        if (pressedKeys[KeyEvent.VK_SPACE]) {
-            characterY -= 25;
+        if (pressedKeys[KeyEvent.VK_SPACE] && onGround) {
+            velocityY -= 20;
+            onGround = false;
+        }
+
+        characterY += velocityY;
+        velocityY += 2;
+
+        if (characterY >= ground) {
+            characterY = ground;
+            velocityY = 0;
+            onGround = true;
+        }
+    }
+
+    public void spawnMobs(int x, int y, String path) {
+        try {
+            BufferedImage image = ImageIO.read(new File(path));
+            mobs.add(new Mob(x, y, 50,50,image));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        while(characterY <= 800) {
-            characterY += 5;
-        }
         moveCharacter();
+        if (getWidth() > 0) {
+            cameraX = characterX - getWidth()/2;
+        }
+        if (cameraX < 0) {
+            cameraX = 0;
+        }
+        if (cameraX > gameW-getWidth()) {
+            cameraX = gameW - getWidth();
+        }
+        spawnTimer++;
+        if (spawnTimer%100 == 0) {
+            spawnMobs(1000 + (int)(Math.random() * 500), ground + 30,"images/slime.png");
+        }
+        for (Mob m : mobs) {
+            m.move(characterX);
+        }
         repaint();
     }
 }
