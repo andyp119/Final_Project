@@ -15,4 +15,11 @@ public class Weapons {
         return damage;
     }
 
+    public BufferedImage getLeftImage() {
+        return leftImage;
+    }
+
+    public BufferedImage getRightImage() {
+        return rightImage;
+    }
 }

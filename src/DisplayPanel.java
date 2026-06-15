@@ -8,12 +8,11 @@ import java.util.ArrayList;
 
 public class DisplayPanel extends JPanel implements MouseListener, KeyListener, ActionListener {
     private int level;
+    private int exp;
     private int health;
     private int damage;
-    private int speed;
 
-    private ArrayList<BufferedImage> Rweapons;
-    private ArrayList<BufferedImage> Lweapons;
+    private ArrayList<Weapons> weapons;
 
     private ArrayList<Mob> mobs;
 
@@ -50,9 +49,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         gameH = 605;
         spawnTimer = 0;
         mobs = new ArrayList<>();
+        weapons = new ArrayList<>();
 
-        Rweapons = new ArrayList<>();
-        Lweapons = new ArrayList<>();
         timer = new Timer(50, this);
         try {
             background = ImageIO.read(new File("images/game.png"));
@@ -65,18 +63,25 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             System.out.println(e.getMessage());
         }
         try {
-             Rweapons.add(ImageIO.read(new File("images/Rsword1.png")));
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        try {
-            Lweapons.add(ImageIO.read(new File("images/Lsword1.png")));
+            BufferedImage weaponRight1 = ImageIO.read(new File("images/Rsword1.png"));
+            BufferedImage weaponLeft1 = ImageIO.read(new File("images/Lsword1.png"));
+            BufferedImage weaponRight2 = ImageIO.read(new File("images/Rsword2.png"));
+            BufferedImage weaponLeft2 = ImageIO.read(new File("images/Lsword2.png"));
+            BufferedImage weaponRight3 = ImageIO.read(new File("images/Rsword3.png"));
+            BufferedImage weaponLeft3 = ImageIO.read(new File("images/Lsword3.png"));
+            weapons.add(new Weapons(25, weaponRight1, weaponLeft1));
+            weapons.add(new Weapons(50, weaponRight2, weaponLeft2));
+            weapons.add(new Weapons(100, weaponRight3, weaponLeft3));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
         try {
             BufferedImage slimeImage = ImageIO.read(new File("images/slime.png"));
-            mobs.add(new Mob(700, ground + 30, 50,50,slimeImage));
+            BufferedImage skeletonImage = ImageIO.read(new File("images/skeleton.png"));
+            BufferedImage zombieImage = ImageIO.read(new File("images/zombie.png"));
+            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 50,1,slimeImage));
+            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 100,4,skeletonImage));
+            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 250,10,zombieImage));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -102,9 +107,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             m.draw(g, cameraX);
         }
         if (facingRight) {
-            g.drawImage(Rweapons.get(level), characterX-cameraX+75, characterY-38, 75, 75, null);
+            g.drawImage(weapons.get(level).getRightImage(), characterX-cameraX+75, characterY-38, 75, 75, null);
         } else {
-            g.drawImage(Lweapons.get(level), characterX-cameraX-50, characterY-38, 75, 75, null);
+            g.drawImage(weapons.get(level).getLeftImage(), characterX-cameraX-50, characterY-38, 75, 75, null);
         }
     }
 
@@ -120,9 +125,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (e.getButton() == MouseEvent.BUTTON1 && collision()) {
+        //if (e.getButton() == MouseEvent.BUTTON1 && collision()) { }
 
-        }
     }
 
     @Override
@@ -168,7 +172,6 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     public void moveCharacter() {
         if (pressedKeys[KeyEvent.VK_A]) {
             characterX -= 5;
-
         }
         if (pressedKeys[KeyEvent.VK_D]) {
             characterX += 5;
