@@ -25,6 +25,12 @@ public class Mob {
         }
     }
 
+    public Rectangle mobRectangle() {
+        int h = (int)(image.getHeight() * 0.4);
+        int w = (int)(image.getWidth() * 0.4);
+        return new Rectangle(posX, posY, w, h);
+    }
+
     public void draw(Graphics g, int cameraX) {
         g.drawImage(image, posX-cameraX, posY, 80,80,null);
     }

@@ -120,7 +120,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1 && collision()) {
 
+        }
     }
 
     @Override
@@ -202,6 +204,22 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
     }
 
+    public Rectangle characterRect() {
+        int h = (int)(character.getHeight()*0.5);
+        int w = (int)(character.getWidth()*0.5);
+        return new Rectangle(characterX, characterY, w, h);
+    }
+
+    public boolean collision() {
+        Rectangle characterRectangle = characterRect();
+        for (int i = 0; i < mobs.size(); i++) {
+            if (mobs.get(i).mobRectangle().intersects(characterRectangle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         moveCharacter();
@@ -216,10 +234,18 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
         spawnTimer++;
         if (spawnTimer%100 == 0) {
-            spawnMobs(1000 + (int)(Math.random() * 500), ground + 30,"images/slime.png");
+            spawnMobs((int)(Math.random() * 3000), ground + 30,"images/slime.png");
+            System.out.println("Spawned!");
         }
         for (Mob m : mobs) {
             m.move(characterX);
+        }
+        if (collision()) {
+            health -= 1;
+            System.out.println("Health: " + health);
+        }
+        if (health <= 0) {
+            timer.stop();
         }
         repaint();
     }
