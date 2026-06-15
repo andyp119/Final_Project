@@ -13,7 +13,6 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private int damage;
 
     private ArrayList<Weapons> weapons;
-
     private ArrayList<Mob> mobs;
 
     private BufferedImage character;
@@ -31,11 +30,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private int gameW;
     private int gameH;
     private int spawnTimer;
+    private int damageCD;
 
 
     public DisplayPanel() {
         level = 0;
-        health = 100;
+        health = 500;
         damage = 10;
         characterX = 350;
         characterY = 350;
@@ -48,6 +48,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         gameW = 3000;
         gameH = 605;
         spawnTimer = 0;
+        damageCD = 0;
         mobs = new ArrayList<>();
         weapons = new ArrayList<>();
 
@@ -79,9 +80,9 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             BufferedImage slimeImage = ImageIO.read(new File("images/slime.png"));
             BufferedImage skeletonImage = ImageIO.read(new File("images/skeleton.png"));
             BufferedImage zombieImage = ImageIO.read(new File("images/zombie.png"));
-            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 50,1,slimeImage));
-            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 100,4,skeletonImage));
-            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 250,10,zombieImage));
+            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 50,2,slimeImage));
+            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 100,5,skeletonImage));
+            mobs.add(new Mob((int) (Math.random() * 1000), ground + 30, 250,8,zombieImage));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -93,8 +94,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         timer.start();
     }
 
-    private void addMouseListener() {
-    }
+    private void addMouseListener() { }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -114,35 +114,28 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     @Override
-    public void mouseClicked(MouseEvent e) {
+    public void mouseClicked(MouseEvent e) { }
 
-    }
 
     @Override
-    public void mousePressed(MouseEvent e) {
-
-    }
+    public void mousePressed(MouseEvent e) { }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        //if (e.getButton() == MouseEvent.BUTTON1 && collision()) { }
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            attack();
+        }
 
     }
 
     @Override
-    public void mouseEntered(MouseEvent e) {
-
-    }
+    public void mouseEntered(MouseEvent e) { }
 
     @Override
-    public void mouseExited(MouseEvent e) {
-
-    }
+    public void mouseExited(MouseEvent e) { }
 
     @Override
-    public void keyTyped(KeyEvent e) {
-
-    }
+    public void keyTyped(KeyEvent e) { }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -208,19 +201,38 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     public Rectangle characterRect() {
-        int h = (int)(character.getHeight()*0.5);
-        int w = (int)(character.getWidth()*0.5);
-        return new Rectangle(characterX, characterY, w, h);
+        return new Rectangle(characterX, characterY, 100, 88);
     }
 
-    public boolean collision() {
+    public Rectangle attackRect() {
+        if (facingRight) {
+            return new Rectangle(characterX, characterY - 10, 150, 108);
+        } else {
+            return new Rectangle(characterX - 50, characterY - 10, 150, 108);
+        }
+    }
+
+    public void attack() {
+        Rectangle hitbox = attackRect();
+        for (int i = mobs.size() - 1; i >= 0; i--) {
+            Mob mob = mobs.get(i);
+            if (hitbox.intersects(mob.mobRectangle())) {
+                mob.takeDamage(damage);
+                if (mob.isDead()) {
+                    mobs.remove(i);
+                }
+            }
+        }
+    }
+
+    public Mob collidingMob() {
         Rectangle characterRectangle = characterRect();
         for (int i = 0; i < mobs.size(); i++) {
             if (mobs.get(i).mobRectangle().intersects(characterRectangle)) {
-                return true;
+                return mobs.get(i);
             }
         }
-        return false;
+        return null;
     }
 
     @Override
@@ -243,12 +255,23 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         for (Mob m : mobs) {
             m.move(characterX);
         }
-        if (collision()) {
-            health -= 1;
-            System.out.println("Health: " + health);
-        }
         if (health <= 0) {
             timer.stop();
+        }
+        if (damageCD > 0) {
+            damageCD--;
+        }
+        for (int i = 0; i < mobs.size(); i++) {
+            Mob mob = mobs.get(i);
+            if (mob.mobRectangle().intersects(characterRect()) && damageCD == 0) {
+                health -= mob.getDamage();
+                damageCD = 10;
+                System.out.println("Health: " + health);
+                break;
+            }
+        }
+        if (spawnTimer % 20 == 0) {
+            health += 2;
         }
         repaint();
     }

@@ -25,6 +25,14 @@ public class Mob {
         }
     }
 
+    public boolean isDead() {
+        return health <= 0;
+    }
+
+    public void takeDamage(int dmg) {
+        health -= dmg;
+    }
+
     public Rectangle mobRectangle() {
         int h = (int)(image.getHeight() * 0.25);
         int w = (int)(image.getWidth() * 0.25);
