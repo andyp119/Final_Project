@@ -22,4 +22,5 @@ public class Weapons {
     public BufferedImage getRightImage() {
         return rightImage;
     }
+
 }
