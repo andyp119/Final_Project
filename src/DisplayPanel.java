@@ -4,11 +4,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.Buffer;
 import java.util.ArrayList;
 
 public class DisplayPanel extends JPanel implements MouseListener, KeyListener, ActionListener {
     private Player player;
-
     private ArrayList<Weapons> weapons;
     private boolean attacking;
     private ArrayList<Mob> mobs;
@@ -16,7 +16,6 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private int characterX;
     private int characterY;
     private boolean facingRight;
-
     private BufferedImage background;
     private Timer timer;
     private boolean[] pressedKeys;
@@ -29,11 +28,13 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     private boolean gameOver;
     private int spawnTimer;
     private int damageCD;
-
     private BufferedImage slimeImage;
     private BufferedImage skeletonImage;
     private BufferedImage zombieImage;
     private BufferedImage deadKirby;
+    private BufferedImage boss;
+    private boolean bossSpawned;
+    private boolean isBossDead;
 
 
     public DisplayPanel() throws IOException {
@@ -58,7 +59,8 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         deadKirby = ImageIO.read(new File("images/deadCharacter.png"));
         weapons = new ArrayList<>();
         attacking = false;
-
+        bossSpawned = false;
+        isBossDead = false;
         timer = new Timer(50, this);
         try {
             background = ImageIO.read(new File("images/game.png"));
@@ -77,9 +79,14 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             BufferedImage weaponLeft2 = ImageIO.read(new File("images/Lsword2.png"));
             BufferedImage weaponRight3 = ImageIO.read(new File("images/Rsword3.png"));
             BufferedImage weaponLeft3 = ImageIO.read(new File("images/Lsword3.png"));
-            weapons.add(new Weapons(25, weaponRight1, weaponLeft1));
-            weapons.add(new Weapons(50, weaponRight2, weaponLeft2));
-            weapons.add(new Weapons(100, weaponRight3, weaponLeft3));
+            weapons.add(new Weapons(40, weaponRight1, weaponLeft1));
+            weapons.add(new Weapons(60, weaponRight2, weaponLeft2));
+            weapons.add(new Weapons(120, weaponRight3, weaponLeft3));
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            boss = ImageIO.read(new File("images/boss.png"));
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -97,9 +104,14 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         super.paintComponent(g);
         g.drawImage(background, -cameraX, 0, gameW, gameH, null);
         if (gameOver) {
-            g.setFont(new Font("Arial", Font.BOLD, 32));
-            g.drawString("You lost", 350, 240);
-            g.drawImage(deadKirby, characterX-cameraX, characterY, 75, 75, null);
+            g.setFont(new Font("Impact", Font.BOLD, 32));
+            g.setColor(Color.RED);
+            g.drawString("You lost!", 350, 240);
+            g.drawImage(deadKirby, characterX - cameraX, characterY, 75, 75, null);
+        } else if (isBossDead) {
+            g.setFont(new Font("Impact", Font.BOLD, 32));
+            g.setColor(Color.YELLOW);
+            g.drawString("You won!", 350, 240);
         } else {
             g.drawImage(character, characterX - cameraX, characterY, 100, 88, null);
             g.setFont(new Font("Arial", Font.BOLD, 16));
@@ -158,12 +170,6 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         if (e.getButton() == MouseEvent.BUTTON1) {
             attacking = false;
             attack();
-            /*
-            player.setLevel(player.getLevel() + 1);
-            if (player.getLevel() >= 3) {
-                player.setLevel(0);
-            }
-            */
         }
     }
 
@@ -231,15 +237,15 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
     }
 
     public void spawnSlime(int x, int y) {
-        mobs.add(new Mob(x, y, 150, 8, 15,slimeImage));
+        mobs.add(new Mob(x, y, 80,80,150, 8, 25,slimeImage));
     }
 
     public void spawnSkeleton(int x, int y) {
-        mobs.add(new Mob(x, y, 500, 20, 20, skeletonImage));
+        mobs.add(new Mob(x, y, 80,80,500, 20, 35, skeletonImage));
     }
 
     public void spawnZombie(int x, int y) {
-        mobs.add(new Mob(x, y, 1000, 32, 30, zombieImage));
+        mobs.add(new Mob(x, y, 80,80,1000, 32, 50, zombieImage));
     }
 
     public Rectangle characterRect() {
@@ -254,6 +260,17 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
     }
 
+    public void collision() {
+        for (int i = 0; i < mobs.size(); i++) {
+            Mob mob = mobs.get(i);
+            if (mob.mobRectangle().intersects(characterRect()) && damageCD == 0) {
+                player.setHealth(player.getHealth() - mob.getDamage());
+                damageCD = 10;
+                break;
+            }
+        }
+    }
+
     public void attack() {
         Rectangle hitbox = attackRect();
         for (int i = mobs.size() - 1; i >= 0; i--) {
@@ -263,6 +280,7 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
                 mob.knockback(characterX);
                 if (mob.isDead()) {
                     player.setExp(player.getExp() + mob.getExp());
+                    player.increaseMaxHP(20);
                     mobs.remove(i);
                 }
             }
@@ -274,11 +292,12 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             player.setExp(0);
             player.setLevel(player.getLevel() + 1);
             player.setHealth(player.getHealth() + 20);
+            player.increaseMaxHP(20);
         }
     }
 
     public void spawnMobs() {
-        if (spawnTimer%100 == 0) {
+        if (spawnTimer%60 == 0) {
             int x = (int)(Math.random() * gameW);
             int random = (int)(Math.random() * 3);
             if (random == 0) {
@@ -291,9 +310,16 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
         }
     }
 
+    public void spawnBoss() {
+        if (!bossSpawned) {
+            mobs.add(new Mob((int) (Math.random() * gameW), ground - 180, 180,180,10000, 50, 0, boss));
+            bossSpawned = true;
+        }
+    }
+
     public void regenRate() {
         if (spawnTimer % 20 == 0) {
-            player.setHealth(Math.min(player.getHealth()+1, 100));
+            player.setHealth(Math.min(player.getHealth()+1, player.getMaxHealth()));
         }
     }
 
@@ -310,28 +336,50 @@ public class DisplayPanel extends JPanel implements MouseListener, KeyListener, 
             cameraX = gameW - getWidth();
         }
         spawnTimer++;
-        spawnMobs();
+        if (player.getHealth() <= 0) {
+            gameOver = true;
+            timer.stop();
+            repaint();
+            return;
+        }
+        if (player.getLevel() != 10) {
+            spawnMobs();
+        } else {
+            if (!bossSpawned) {
+                mobs.clear();
+            }
+            spawnBoss();
+            if (spawnTimer % 120 == 0) {
+                int x = (int)(Math.random() * gameW);
+                int random = (int)(Math.random() * 3);
+                if (random == 0) {
+                    spawnSlime(x, ground + 30);
+                } else if (random == 1) {
+                    spawnSkeleton(x, ground + 30);
+                } else {
+                    spawnZombie(x, ground + 30);
+                }
+            }
+        }
         for (Mob m : mobs) {
             m.move(characterX);
         }
-        if (player.getHealth() <= 0) {
+        boolean bossIsDead = true;
+        for (Mob m : mobs) {
+            if (m.getHealth() > 5000) {
+                bossIsDead = false;
+            }
+        }
+        if (bossSpawned && player.getLevel() >= 10 && bossIsDead) {
+            isBossDead = true;
             timer.stop();
+            repaint();
+            return;
         }
         if (damageCD > 0) {
             damageCD--;
         }
-        for (int i = 0; i < mobs.size(); i++) {
-            Mob mob = mobs.get(i);
-            if (mob.mobRectangle().intersects(characterRect()) && damageCD == 0) {
-                player.setHealth(player.getHealth() - mob.getDamage());
-                damageCD = 10;
-                break;
-            }
-        }
-        if (player.getHealth() <= 0) {
-            gameOver = true;
-            timer.stop();
-        }
+        collision();
         levelUp();
         regenRate();
         repaint();

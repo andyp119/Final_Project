@@ -1,5 +1,6 @@
 public class Player {
     private int health;
+    private int maxHealth;
     private int level;
     private int exp;
     private String name;
@@ -9,6 +10,7 @@ public class Player {
         this.level = level;
         this.exp = exp;
         this.name = name;
+        maxHealth = health;
     }
 
     public Player(int health, int level, int exp) {
@@ -53,5 +55,13 @@ public class Player {
 
     public void setExp(int exp) {
         this.exp = exp;
+    }
+
+    public void increaseMaxHP(int hp) {
+        maxHealth += hp;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
     }
 }
